@@ -22,36 +22,102 @@ class WP extends BaseController
         $m = count($alternatives);
         $n = count($criteria);
 
-        // Normalisasi bobot
+        // STEP 1: Data Input
+        $step1 = [
+            'matrix' => $matrix,
+            'alternatives' => $alternatives,
+            'criteria' => $criteria,
+            'criteriaTypes' => $criteriaTypes,
+            'weights' => $weights
+        ];
+
+        // STEP 2: Normalisasi Bobot (Perbaikan Bobot)
         $totalWeight = array_sum(array_map('floatval', $weights));
         $normalizedWeights = [];
+        $weightDetails = [];
+        
         for ($j = 0; $j < $n; $j++) {
             $w = floatval($weights[$j]) / $totalWeight;
             // Jika cost, bobot menjadi negatif
-            $normalizedWeights[$j] = ($criteriaTypes[$j] === 'benefit') ? $w : -$w;
-        }
-
-        // Hitung vektor S
-        $vectorS = [];
-        for ($i = 0; $i < $m; $i++) {
-            $s = 1;
-            for ($j = 0; $j < $n; $j++) {
-                $s *= pow(floatval($matrix[$i][$j]), $normalizedWeights[$j]);
-            }
-            $vectorS[$i] = $s;
-        }
-
-        // Hitung vektor V (preferensi)
-        $totalS = array_sum($vectorS);
-        $finalScores = [];
-        for ($i = 0; $i < $m; $i++) {
-            $finalScores[] = [
-                'name' => $alternatives[$i],
-                'score' => $vectorS[$i] / $totalS
+            $finalWeight = ($criteriaTypes[$j] === 'benefit') ? $w : -$w;
+            $normalizedWeights[$j] = $finalWeight;
+            
+            $weightDetails[$criteria[$j]] = [
+                'original' => floatval($weights[$j]),
+                'normalized' => $w,
+                'type' => $criteriaTypes[$j],
+                'finalWeight' => $finalWeight
             ];
         }
 
-        // Urutkan berdasarkan skor tertinggi
+        $step2 = [
+            'totalWeight' => $totalWeight,
+            'normalizedWeights' => $normalizedWeights,
+            'weightDetails' => $weightDetails
+        ];
+
+        // STEP 3: Hitung Vektor S
+        $vectorSDetails = [];
+        $vectorS = [];
+        
+        for ($i = 0; $i < $m; $i++) {
+            $s = 1;
+            $details = [];
+            
+            for ($j = 0; $j < $n; $j++) {
+                $value = floatval($matrix[$i][$j]);
+                $power = $normalizedWeights[$j];
+                $result = pow($value, $power);
+                
+                $details[] = [
+                    'criteria' => $criteria[$j],
+                    'value' => $value,
+                    'weight' => $power,
+                    'result' => $result
+                ];
+                
+                $s *= $result;
+            }
+            
+            $vectorS[$i] = $s;
+            $vectorSDetails[$alternatives[$i]] = [
+                'details' => $details,
+                'vectorS' => $s
+            ];
+        }
+
+        $step3 = [
+            'vectorS' => $vectorS,
+            'vectorSDetails' => $vectorSDetails
+        ];
+
+        // STEP 4: Hitung Vektor V (Preferensi)
+        $totalS = array_sum($vectorS);
+        $vectorVDetails = [];
+        $finalScores = [];
+        
+        for ($i = 0; $i < $m; $i++) {
+            $v = $vectorS[$i] / $totalS;
+            
+            $vectorVDetails[$alternatives[$i]] = [
+                'vectorS' => $vectorS[$i],
+                'totalS' => $totalS,
+                'vectorV' => $v
+            ];
+            
+            $finalScores[] = [
+                'name' => $alternatives[$i],
+                'score' => $v,
+                'vectorS' => $vectorS[$i]
+            ];
+        }
+
+        $step4 = [
+            'totalS' => $totalS,
+            'vectorVDetails' => $vectorVDetails
+        ];
+
+        // Urutkan
         usort($finalScores, function($a, $b) {
             return $b['score'] <=> $a['score'];
         });
@@ -59,6 +125,10 @@ class WP extends BaseController
         $data = [
             'alternatives' => $alternatives,
             'criteria' => $criteria,
+            'step1' => $step1,
+            'step2' => $step2,
+            'step3' => $step3,
+            'step4' => $step4,
             'results' => $finalScores
         ];
 

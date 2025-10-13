@@ -15,33 +15,67 @@ class AHP extends BaseController
     {
         $alternatives = $this->request->getPost('alternatives');
         $criteria = $this->request->getPost('criteria');
-        $weights = $this->request->getPost('weights'); // Bobot kriteria dari user
-        $matrix = $this->request->getPost('matrix'); // Nilai alternatif untuk setiap kriteria
+        $weights = $this->request->getPost('weights');
+        $matrix = $this->request->getPost('matrix');
 
         $numAlts = count($alternatives);
         $numCrits = count($criteria);
 
-        // Normalisasi bobot kriteria agar total = 1
+        // STEP 1: Data Input
+        $step1 = [
+            'alternatives' => $alternatives,
+            'criteria' => $criteria,
+            'weights' => $weights,
+            'matrix' => $matrix
+        ];
+
+        // STEP 2: Normalisasi bobot kriteria
         $totalWeight = array_sum(array_map('floatval', $weights));
         $normalizedWeights = [];
         for ($i = 0; $i < $numCrits; $i++) {
             $normalizedWeights[$i] = floatval($weights[$i]) / $totalWeight;
         }
 
-        // Hitung skor alternatif
+        $step2 = [
+            'totalWeight' => $totalWeight,
+            'normalizedWeights' => $normalizedWeights
+        ];
+
+        // STEP 3: Perhitungan skor untuk setiap alternatif
+        $calculations = [];
         $finalScores = [];
+        
         for ($i = 0; $i < $numAlts; $i++) {
             $score = 0;
+            $details = [];
+            
             for ($j = 0; $j < $numCrits; $j++) {
-                $score += floatval($matrix[$i][$j]) * $normalizedWeights[$j];
+                $value = floatval($matrix[$i][$j]);
+                $weight = $normalizedWeights[$j];
+                $contribution = $value * $weight;
+                
+                $details[] = [
+                    'criteria' => $criteria[$j],
+                    'value' => $value,
+                    'weight' => $weight,
+                    'contribution' => $contribution
+                ];
+                
+                $score += $contribution;
             }
+            
+            $calculations[$alternatives[$i]] = [
+                'details' => $details,
+                'totalScore' => $score
+            ];
+            
             $finalScores[] = [
                 'name' => $alternatives[$i],
                 'score' => $score
             ];
         }
 
-        // Urutkan berdasarkan skor tertinggi
+        // STEP 4: Urutkan hasil
         usort($finalScores, function($a, $b) {
             return $b['score'] <=> $a['score'];
         });
@@ -49,7 +83,11 @@ class AHP extends BaseController
         $data = [
             'alternatives' => $alternatives,
             'criteria' => $criteria,
-            'weights' => $normalizedWeights,
+            'weights' => $weights,
+            'step1' => $step1,
+            'step2' => $step2,
+            'calculations' => $calculations,
+            'normalizedWeights' => $normalizedWeights,
             'results' => $finalScores
         ];
 

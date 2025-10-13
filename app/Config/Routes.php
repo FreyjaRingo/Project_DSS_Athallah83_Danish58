@@ -16,3 +16,13 @@ $routes->get('wp', 'WP::index');
 $routes->post('wp/calculate', 'WP::calculate');
 $routes->get('compare', 'Compare::index');
 $routes->post('compare/calculate', 'Compare::calculate');
+$routes->get('/', 'Home::index');
+$routes->get('dss', 'DSSController::index');
+$routes->get('dss/input/(:alpha)', 'DSSController::input/$1');
+$routes->post('dss/calculate', 'DSSController::calculate');
+
+// WP Routes
+$routes->get('wp', 'WPController::index');
+$routes->post('wp/calculate', 'WPController::calculate');
+
+$routes->get('dss/export', 'DSSController::export');

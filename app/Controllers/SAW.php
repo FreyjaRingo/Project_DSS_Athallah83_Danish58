@@ -22,40 +22,97 @@ class SAW extends BaseController
         $m = count($alternatives);
         $n = count($criteria);
 
-        // Normalisasi matriks
-        $normalizedMatrix = [];
-        
+        // STEP 1: Matriks Keputusan
+        $step1 = [
+            'matrix' => $matrix,
+            'alternatives' => $alternatives,
+            'criteria' => $criteria,
+            'criteriaTypes' => $criteriaTypes,
+            'weights' => $weights
+        ];
+
+        // STEP 2: Tentukan Max/Min per Kriteria
+        $maxMinValues = [];
         for ($j = 0; $j < $n; $j++) {
             $column = array_column($matrix, $j);
             $column = array_map('floatval', $column);
-            
-            if ($criteriaTypes[$j] === 'benefit') {
-                $max = max($column);
-                for ($i = 0; $i < $m; $i++) {
-                    $normalizedMatrix[$i][$j] = floatval($matrix[$i][$j]) / $max;
+            $maxMinValues[$j] = [
+                'max' => max($column),
+                'min' => min($column),
+                'type' => $criteriaTypes[$j]
+            ];
+        }
+
+        $step2 = [
+            'maxMinValues' => $maxMinValues
+        ];
+
+        // STEP 3: Normalisasi Matriks
+        $normalizedMatrix = [];
+        $normalizationDetails = [];
+        
+        for ($i = 0; $i < $m; $i++) {
+            $normalizationDetails[$alternatives[$i]] = [];
+            for ($j = 0; $j < $n; $j++) {
+                $value = floatval($matrix[$i][$j]);
+                
+                if ($criteriaTypes[$j] === 'benefit') {
+                    $normalized = $value / $maxMinValues[$j]['max'];
+                    $formula = "$value / {$maxMinValues[$j]['max']}";
+                } else {
+                    $normalized = $maxMinValues[$j]['min'] / $value;
+                    $formula = "{$maxMinValues[$j]['min']} / $value";
                 }
-            } else {
-                $min = min($column);
-                for ($i = 0; $i < $m; $i++) {
-                    $normalizedMatrix[$i][$j] = $min / floatval($matrix[$i][$j]);
-                }
+                
+                $normalizedMatrix[$i][$j] = $normalized;
+                $normalizationDetails[$alternatives[$i]][$criteria[$j]] = [
+                    'original' => $value,
+                    'formula' => $formula,
+                    'normalized' => $normalized
+                ];
             }
         }
 
-        // Hitung skor preferensi
+        $step3 = [
+            'normalizedMatrix' => $normalizedMatrix,
+            'normalizationDetails' => $normalizationDetails
+        ];
+
+        // STEP 4: Perhitungan Skor (Preferensi)
+        $scoreDetails = [];
         $finalScores = [];
+        
         for ($i = 0; $i < $m; $i++) {
             $score = 0;
+            $details = [];
+            
             for ($j = 0; $j < $n; $j++) {
-                $score += $normalizedMatrix[$i][$j] * floatval($weights[$j]);
+                $contribution = $normalizedMatrix[$i][$j] * floatval($weights[$j]);
+                $details[] = [
+                    'criteria' => $criteria[$j],
+                    'normalized' => $normalizedMatrix[$i][$j],
+                    'weight' => floatval($weights[$j]),
+                    'contribution' => $contribution
+                ];
+                $score += $contribution;
             }
+            
+            $scoreDetails[$alternatives[$i]] = [
+                'details' => $details,
+                'totalScore' => $score
+            ];
+            
             $finalScores[] = [
                 'name' => $alternatives[$i],
                 'score' => $score
             ];
         }
 
-        // Urutkan berdasarkan skor tertinggi
+        $step4 = [
+            'scoreDetails' => $scoreDetails
+        ];
+
+        // Urutkan
         usort($finalScores, function($a, $b) {
             return $b['score'] <=> $a['score'];
         });
@@ -63,6 +120,10 @@ class SAW extends BaseController
         $data = [
             'alternatives' => $alternatives,
             'criteria' => $criteria,
+            'step1' => $step1,
+            'step2' => $step2,
+            'step3' => $step3,
+            'step4' => $step4,
             'results' => $finalScores
         ];
 

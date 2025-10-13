@@ -22,21 +22,35 @@ class TOPSIS extends BaseController
         $m = count($alternatives);
         $n = count($criteria);
 
-        // Normalisasi matriks
+        // STEP 1: Matriks Keputusan
+        $step1 = [
+            'matrix' => $matrix,
+            'alternatives' => $alternatives,
+            'criteria' => $criteria
+        ];
+
+        // STEP 2: Matriks Ternormalisasi
         $normalizedMatrix = [];
+        $columnSums = [];
+        
         for ($j = 0; $j < $n; $j++) {
             $sumSquares = 0;
             for ($i = 0; $i < $m; $i++) {
                 $sumSquares += pow(floatval($matrix[$i][$j]), 2);
             }
-            $denominator = sqrt($sumSquares);
+            $columnSums[$j] = sqrt($sumSquares);
             
             for ($i = 0; $i < $m; $i++) {
-                $normalizedMatrix[$i][$j] = floatval($matrix[$i][$j]) / $denominator;
+                $normalizedMatrix[$i][$j] = floatval($matrix[$i][$j]) / $columnSums[$j];
             }
         }
 
-        // Matriks ternormalisasi terbobot
+        $step2 = [
+            'columnSums' => $columnSums,
+            'normalizedMatrix' => $normalizedMatrix
+        ];
+
+        // STEP 3: Matriks Ternormalisasi Terbobot
         $weightedMatrix = [];
         for ($i = 0; $i < $m; $i++) {
             for ($j = 0; $j < $n; $j++) {
@@ -44,7 +58,12 @@ class TOPSIS extends BaseController
             }
         }
 
-        // Solusi ideal positif dan negatif
+        $step3 = [
+            'weightedMatrix' => $weightedMatrix,
+            'weights' => $weights
+        ];
+
+        // STEP 4: Solusi Ideal Positif dan Negatif
         $idealPositive = [];
         $idealNegative = [];
         
@@ -59,38 +78,101 @@ class TOPSIS extends BaseController
             }
         }
 
-        // Jarak ke solusi ideal
+        $step4 = [
+            'idealPositive' => $idealPositive,
+            'idealNegative' => $idealNegative,
+            'criteriaTypes' => $criteriaTypes
+        ];
+
+        // STEP 5: Jarak Solusi Ideal
         $distancePositive = [];
         $distanceNegative = [];
+        $distanceDetails = [];
         
         for ($i = 0; $i < $m; $i++) {
             $sumPos = 0;
             $sumNeg = 0;
+            $detailsPos = [];
+            $detailsNeg = [];
+            
             for ($j = 0; $j < $n; $j++) {
-                $sumPos += pow($weightedMatrix[$i][$j] - $idealPositive[$j], 2);
-                $sumNeg += pow($weightedMatrix[$i][$j] - $idealNegative[$j], 2);
+                $diffPos = $weightedMatrix[$i][$j] - $idealPositive[$j];
+                $diffNeg = $weightedMatrix[$i][$j] - $idealNegative[$j];
+                $sqPos = pow($diffPos, 2);
+                $sqNeg = pow($diffNeg, 2);
+                
+                $detailsPos[] = [
+                    'criteria' => $criteria[$j],
+                    'value' => $weightedMatrix[$i][$j],
+                    'ideal' => $idealPositive[$j],
+                    'diff' => $diffPos,
+                    'squared' => $sqPos
+                ];
+                
+                $detailsNeg[] = [
+                    'criteria' => $criteria[$j],
+                    'value' => $weightedMatrix[$i][$j],
+                    'ideal' => $idealNegative[$j],
+                    'diff' => $diffNeg,
+                    'squared' => $sqNeg
+                ];
+                
+                $sumPos += $sqPos;
+                $sumNeg += $sqNeg;
             }
+            
             $distancePositive[$i] = sqrt($sumPos);
             $distanceNegative[$i] = sqrt($sumNeg);
-        }
-
-        // Preferensi relatif
-        $preferences = [];
-        for ($i = 0; $i < $m; $i++) {
-            $preferences[] = [
-                'name' => $alternatives[$i],
-                'score' => $distanceNegative[$i] / ($distanceNegative[$i] + $distancePositive[$i])
+            
+            $distanceDetails[$alternatives[$i]] = [
+                'positive' => [
+                    'details' => $detailsPos,
+                    'sum' => $sumPos,
+                    'distance' => $distancePositive[$i]
+                ],
+                'negative' => [
+                    'details' => $detailsNeg,
+                    'sum' => $sumNeg,
+                    'distance' => $distanceNegative[$i]
+                ]
             ];
         }
 
-        // Urutkan berdasarkan preferensi tertinggi
+        $step5 = [
+            'distancePositive' => $distancePositive,
+            'distanceNegative' => $distanceNegative,
+            'distanceDetails' => $distanceDetails
+        ];
+
+        // STEP 6: Preferensi Relatif
+        $preferences = [];
+        for ($i = 0; $i < $m; $i++) {
+            $score = $distanceNegative[$i] / ($distanceNegative[$i] + $distancePositive[$i]);
+            $preferences[] = [
+                'name' => $alternatives[$i],
+                'score' => $score,
+                'dPlus' => $distancePositive[$i],
+                'dMinus' => $distanceNegative[$i]
+            ];
+        }
+
         usort($preferences, function($a, $b) {
             return $b['score'] <=> $a['score'];
         });
 
+        $step6 = [
+            'preferences' => $preferences
+        ];
+
         $data = [
             'alternatives' => $alternatives,
             'criteria' => $criteria,
+            'step1' => $step1,
+            'step2' => $step2,
+            'step3' => $step3,
+            'step4' => $step4,
+            'step5' => $step5,
+            'step6' => $step6,
             'results' => $preferences
         ];
 

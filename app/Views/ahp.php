@@ -34,15 +34,24 @@
 
     <?php if (isset($results)): ?>
     <div class="result-card mt-5">
-        <h3 class="mb-4">📊 Hasil Perhitungan AHP</h3>
+        <h3 class="mb-4">📊 Proses & Hasil Perhitungan AHP</h3>
         
+        <!-- STEP 1: Data Input -->
         <div class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Bobot Kriteria (Ternormalisasi)</h5>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📝 STEP 1: Data Input</h5>
             </div>
             <div class="card-body">
+                <h6 class="text-info">Alternatif:</h6>
+                <div class="mb-3">
+                    <?php foreach ($alternatives as $index => $alt): ?>
+                        <span class="badge bg-primary me-2">A<?= $index + 1 ?>: <?= esc($alt) ?></span>
+                    <?php endforeach; ?>
+                </div>
+
+                <h6 class="text-info mt-3">Kriteria & Bobot:</h6>
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered table-sm">
                         <thead class="table-light">
                             <tr>
                                 <?php foreach ($criteria as $crit): ?>
@@ -52,19 +61,134 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <?php foreach ($weights as $weight): ?>
-                                <td><strong><?= number_format($weight, 4) ?></strong></td>
+                                <?php foreach ($weights as $w): ?>
+                                <td><strong><?= $w ?></strong></td>
                                 <?php endforeach; ?>
                             </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h6 class="text-info mt-3">Matriks Nilai Alternatif:</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Alternatif</th>
+                                <?php foreach ($criteria as $crit): ?>
+                                <th><?= esc($crit) ?></th>
+                                <?php endforeach; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($alternatives as $i => $alt): ?>
+                            <tr>
+                                <th class="table-light"><?= esc($alt) ?></th>
+                                <?php foreach ($criteria as $j => $crit): ?>
+                                <td><?= $step1['matrix'][$i][$j] ?></td>
+                                <?php endforeach; ?>
+                            </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
+        <!-- STEP 2: Normalisasi Bobot -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">🔢 STEP 2: Normalisasi Bobot Kriteria</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Formula:</strong> Bobot Ternormalisasi = Bobot / Total Bobot</p>
+                <p><strong>Total Bobot:</strong> <span class="badge bg-warning text-dark"><?= number_format($step2['totalWeight'], 4) ?></span></p>
+                
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Kriteria</th>
+                                <th>Bobot Awal</th>
+                                <th>Perhitungan</th>
+                                <th>Bobot Ternormalisasi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($criteria as $i => $crit): ?>
+                            <tr>
+                                <td><strong><?= esc($crit) ?></strong></td>
+                                <td><?= $weights[$i] ?></td>
+                                <td><code><?= $weights[$i] ?> / <?= number_format($step2['totalWeight'], 4) ?></code></td>
+                                <td><span class="badge bg-success"><?= number_format($normalizedWeights[$i], 4) ?></span></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3">Total Bobot Ternormalisasi:</th>
+                                <th><span class="badge bg-primary"><?= number_format(array_sum($normalizedWeights), 4) ?></span></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Perhitungan Skor -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">📐 STEP 3: Perhitungan Skor Alternatif</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Formula:</strong> Skor = Σ (Nilai × Bobot Ternormalisasi)</p>
+                
+                <?php foreach ($calculations as $altName => $calc): ?>
+                <div class="card mb-3 bg-dark">
+                    <div class="card-header bg-secondary">
+                        <h6 class="mb-0 text-white">Perhitungan untuk: <strong><?= esc($altName) ?></strong></h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Kriteria</th>
+                                        <th>Nilai</th>
+                                        <th>Bobot</th>
+                                        <th>Perhitungan</th>
+                                        <th>Kontribusi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($calc['details'] as $detail): ?>
+                                    <tr>
+                                        <td><strong><?= esc($detail['criteria']) ?></strong></td>
+                                        <td><?= number_format($detail['value'], 2) ?></td>
+                                        <td><?= number_format($detail['weight'], 4) ?></td>
+                                        <td><code><?= number_format($detail['value'], 2) ?> × <?= number_format($detail['weight'], 4) ?></code></td>
+                                        <td><span class="badge bg-info"><?= number_format($detail['contribution'], 4) ?></span></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                                <tfoot class="table-success">
+                                    <tr>
+                                        <th colspan="4">Total Skor:</th>
+                                        <th><span class="badge bg-success"><?= number_format($calc['totalScore'], 4) ?></span></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- STEP 4: Hasil Akhir -->
         <div class="card">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Peringkat Alternatif</h5>
+                <h5 class="mb-0">🏆 STEP 4: Peringkat Final</h5>
             </div>
             <div class="card-body">
                 <?php foreach ($results as $index => $result): ?>

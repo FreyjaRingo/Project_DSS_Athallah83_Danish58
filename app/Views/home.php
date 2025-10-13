@@ -129,11 +129,11 @@
     </div>
 
     <div class="mt-5 p-4 bg-light rounded">
-        <h4 class="text-center mb-3">📚 Tentang Sistem</h4>
+        <h4 class="text-center mb-3">TUGAS DECISION SUPPORT SYSTEM</h4>
         <p class="text-center text-muted">
-            Website ini dibuat untuk tugas mata kuliah Decision Support System. 
-            Sistem ini mensimulasikan 4 metode DSS tanpa menggunakan database, 
-            semua perhitungan dilakukan secara real-time berdasarkan input pengguna.
+            Dibuat oleh:
+            Danish Rahadian Mirza Effendi - 140810230058
+            Athallah Azhar Aulia Hadi - 140810230083
         </p>
     </div>
 </div>
