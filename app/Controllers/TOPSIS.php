@@ -39,9 +39,16 @@ class TOPSIS extends BaseController
                 $sumSquares += pow(floatval($matrix[$i][$j]), 2);
             }
             $columnSums[$j] = sqrt($sumSquares);
-            
-            for ($i = 0; $i < $m; $i++) {
-                $normalizedMatrix[$i][$j] = floatval($matrix[$i][$j]) / $columnSums[$j];
+
+            // ERROR HANDLING: jika kolom semua 0, hindari pembagian dengan 0
+            if ($columnSums[$j] == 0) {
+                for ($i = 0; $i < $m; $i++) {
+                    $normalizedMatrix[$i][$j] = 0;
+                }
+            } else {
+                for ($i = 0; $i < $m; $i++) {
+                    $normalizedMatrix[$i][$j] = floatval($matrix[$i][$j]) / $columnSums[$j];
+                }
             }
         }
 
@@ -147,7 +154,15 @@ class TOPSIS extends BaseController
         // STEP 6: Preferensi Relatif
         $preferences = [];
         for ($i = 0; $i < $m; $i++) {
-            $score = $distanceNegative[$i] / ($distanceNegative[$i] + $distancePositive[$i]);
+            $denominator = $distanceNegative[$i] + $distancePositive[$i];
+
+            // ERROR HANDLING: jika denominator = 0, set score = 0
+            if ($denominator == 0) {
+                $score = 0;
+            } else {
+                $score = $distanceNegative[$i] / $denominator;
+            }
+
             $preferences[] = [
                 'name' => $alternatives[$i],
                 'score' => $score,
