@@ -5,7 +5,8 @@
         <strong>Cara Kerja:</strong> WP menggunakan perkalian untuk menghubungkan rating atribut dengan pangkat bobot yang telah dinormalisasi.
     </div>
 
-    <form method="post" action="<?= base_url('wp/calculate') ?>" id="wpForm">
+    <form method="post" action="<?= base_url('wp/calculate/') ?>" id="wpForm">
+        <?= csrf_field() ?>
         <div class="card mb-4">
             <div class="card-header bg-warning text-dark">
                 <h5 class="mb-0">1. Input Jumlah Data</h5>
@@ -308,7 +309,7 @@ function generateInputs() {
     for (let i = 0; i < numAlts; i++) {
         html += `<tr><th class="table-light">Alt. ${i+1}</th>`;
         for (let j = 0; j < numCrits; j++) {
-            html += `<td><input type="number" name="matrix[${i}][${j}]" class="form-control" step="0.01" value="1" required></td>`;
+            html += `<td><input type="number" name="matrix[${i}][${j}]" class="form-control" step="any" min="0.0001" value="1" required></td>`;
         }
         html += '</tr>';
     }

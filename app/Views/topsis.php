@@ -341,7 +341,8 @@
         <strong>Cara Kerja:</strong> TOPSIS mencari alternatif yang paling dekat dengan solusi ideal positif dan paling jauh dari solusi ideal negatif.
     </div>
 
-    <form method="post" action="<?= base_url('topsis/calculate') ?>" id="topsisForm">
+    <form method="post" action="<?= base_url('topsis/calculate/') ?>" id="topsisForm">
+        <?= csrf_field() ?>
         <div class="card mb-4">
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0">1. Input Jumlah Data</h5>
@@ -412,7 +413,7 @@ function generateInputs() {
     for (let i = 0; i < numAlts; i++) {
         html += `<tr><th class="table-light">Alt. ${i+1}</th>`;
         for (let j = 0; j < numCrits; j++) {
-            html += `<td><input type="number" name="matrix[${i}][${j}]" class="form-control" step="0.01" value="0" required></td>`;
+            html += `<td><input type="number" name="matrix[${i}][${j}]" class="form-control" step="any" min="0.0001" value="1" required></td>`;
         }
         html += '</tr>';
     }

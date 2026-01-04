@@ -13,6 +13,9 @@ class Compare extends BaseController
 
     public function calculate()
     {
+        if (! $this->request->is('post')) {
+            return redirect()->to('compare');
+        }
         $alternatives = $this->request->getPost('alternatives');
         $criteria = $this->request->getPost('criteria');
         $weights = $this->request->getPost('weights');
@@ -104,7 +107,12 @@ class Compare extends BaseController
             $denominator = sqrt($sumSquares);
             
             for ($i = 0; $i < $m; $i++) {
-                $normalizedMatrix[$i][$j] = floatval($matrix[$i][$j]) / $denominator;
+                // Jika pembagi 0, hasilnya dipaksa 0 agar tidak error
+				if ($denominator == 0) {
+   					$normalizedMatrix[$i][$j] = 0;
+				} else {
+   				 $normalizedMatrix[$i][$j] = floatval($matrix[$i][$j]) / $denominator;
+				}
             }
         }
 
@@ -149,9 +157,19 @@ class Compare extends BaseController
         // Preferensi
         $preferences = [];
         for ($i = 0; $i < $m; $i++) {
+            // Cegah error division by zero
+            $denominator = $distanceNegative[$i] + $distancePositive[$i];
+            
+            if ($denominator == 0) {
+                // Jika jarak 0 (data identik), beri nilai 0
+                $score = 0; 
+            } else {
+                $score = $distanceNegative[$i] / $denominator;
+            }
+
             $preferences[] = [
                 'name' => $alternatives[$i],
-                'score' => $distanceNegative[$i] / ($distanceNegative[$i] + $distancePositive[$i])
+                'score' => $score
             ];
         }
 

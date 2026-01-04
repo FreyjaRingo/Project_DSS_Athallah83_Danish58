@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-class AHP extends BaseController
+class Ahp extends BaseController
 {
     public function index()
     {

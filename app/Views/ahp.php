@@ -5,7 +5,8 @@
         <strong>Cara Kerja:</strong> Masukkan nama alternatif, kriteria dengan bobotnya, kemudian nilai setiap alternatif untuk masing-masing kriteria.
     </div>
 
-    <form method="post" action="<?= base_url('ahp/calculate') ?>" id="ahpForm">
+    <form method="post" action="<?= base_url('ahp/calculate/') ?>" id="ahpForm">
+        <?= csrf_field() ?>
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">1. Input Jumlah Data</h5>
@@ -249,8 +250,7 @@ function generateInputs() {
     for (let i = 0; i < numAlts; i++) {
         html += `<tr><th class="table-light">Alt. ${i+1}</th>`;
         for (let j = 0; j < numCrits; j++) {
-            html += `<td><input type="number" name="matrix[${i}][${j}]" class="form-control" step="0.01" value="0" required></td>`;
-        }
+            html += `<td><input type="number" name="matrix[${i}][${j}]" class="form-control" step="any" min="0.0001" value="1" required></td>`;        }
         html += '</tr>';
     }
     html += '</tbody></table></div></div></div>';

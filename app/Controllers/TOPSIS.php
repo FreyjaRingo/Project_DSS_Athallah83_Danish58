@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-class TOPSIS extends BaseController
+class Topsis extends BaseController
 {
     public function index()
     {

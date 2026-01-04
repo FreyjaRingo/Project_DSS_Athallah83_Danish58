@@ -5,7 +5,8 @@
         <strong>💡 Fitur Perbandingan:</strong> Input data sekali, bandingkan hasil dari 2 metode berbeda untuk melihat konsistensi peringkat alternatif.
     </div>
 
-    <form method="post" action="<?= base_url('compare/calculate') ?>" id="compareForm">
+    <form method="post" action="<?= base_url('compare/calculate/') ?>" id="compareForm">
+        <?= csrf_field() ?>
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">1. Pilih Metode yang Akan Dibandingkan</h5>
@@ -196,9 +197,11 @@
 
 <script>
 function generateInputs() {
+    // Ambil nilai jumlah alternatif dan kriteria
     const numAlts = parseInt(document.getElementById('numAlternatives').value);
     const numCrits = parseInt(document.getElementById('numCriteria').value);
     
+    // --- BAGIAN 3: INPUT NAMA ALTERNATIF ---
     let html = '<div class="card mb-4"><div class="card-header bg-secondary text-white"><h5 class="mb-0">3. Nama Alternatif</h5></div><div class="card-body"><div class="row">';
     
     for (let i = 0; i < numAlts; i++) {
@@ -209,13 +212,14 @@ function generateInputs() {
     }
     html += '</div></div></div>';
     
+    // --- BAGIAN 4: INPUT KRITERIA & BOBOT ---
     html += '<div class="card mb-4"><div class="card-header bg-secondary text-white"><h5 class="mb-0">4. Kriteria, Bobot, dan Tipe</h5></div><div class="card-body">';
     html += '<div class="table-responsive"><table class="table table-bordered"><thead class="table-light"><tr><th>Kriteria</th><th>Bobot</th><th>Tipe</th></tr></thead><tbody>';
     
     for (let i = 0; i < numCrits; i++) {
         html += `<tr>
             <td><input type="text" name="criteria[]" class="form-control" placeholder="Contoh: Harga" required></td>
-            <td><input type="number" name="weights[]" class="form-control" step="0.01" min="0" value="0.2" required></td>
+            <td><input type="number" name="weights[]" class="form-control" step="any" min="0.0001" value="1" required></td>
             <td>
                 <select name="criteria_types[]" class="form-select" required>
                     <option value="benefit">Benefit (Semakin Tinggi Semakin Baik)</option>
@@ -224,26 +228,31 @@ function generateInputs() {
             </td>
         </tr>`;
     }
-    html += '</tbody></table></div><small class="text-muted">*Total bobot sebaiknya = 1</small></div></div>';
+    html += '</tbody></table></div><small class="text-muted">*Total bobot sebaiknya = 1 (akan dinormalisasi otomatis)</small></div></div>';
     
+    // --- BAGIAN 5: INPUT MATRIX (YANG TADI HANCUR) ---
     html += '<div class="card mb-4"><div class="card-header bg-info text-white"><h5 class="mb-0">5. Nilai Alternatif untuk Setiap Kriteria</h5></div><div class="card-body">';
     html += '<div class="table-responsive"><table class="table table-bordered"><thead class="table-light"><tr><th>Alternatif</th>';
     
+    // Loop Header Kriteria
     for (let i = 0; i < numCrits; i++) {
         html += `<th>Kriteria ${i+1}</th>`;
     }
     html += '</tr></thead><tbody>';
     
+    // Loop Baris Matrix
     for (let i = 0; i < numAlts; i++) {
-        html += `<tr><th class="table-light">Alt. ${i+1}</th>`;
+        html += `<tr><th class="table-light">Alt. ${i+1}</th>`; // Nama baris
         for (let j = 0; j < numCrits; j++) {
-            html += `<td><input type="number" name="matrix[${i}][${j}]" class="form-control" step="0.01" value="0" required></td>`;
+            // PERHATIKAN: Input harus diapit oleh <td> dan </td>
+            html += `<td><input type="number" name="matrix[${i}][${j}]" class="form-control" step="any" min="0.0001" value="1" required></td>`;
         }
         html += '</tr>';
     }
     html += '</tbody></table></div></div></div>';
     
+    // Tampilkan ke layar & munculkan tombol hitung
     document.getElementById('dynamicInputs').innerHTML = html;
     document.getElementById('calculateBtn').style.display = 'block';
 }
-</script>
+</script>   

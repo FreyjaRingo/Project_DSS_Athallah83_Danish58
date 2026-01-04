@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 use Exception;
 
-class SAW extends BaseController
+class Saw extends BaseController
 {
     public function index()
     {

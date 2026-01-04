@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 use Exception;
 
-class WP extends BaseController
+class Wp extends BaseController
 {
     public function index()
     {
